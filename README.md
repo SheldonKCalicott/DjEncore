@@ -19,7 +19,20 @@ DJ Encore is a Windows desktop app for browsing and downloading chart packs from
 - Playwright browser support
 - PyInstaller for building the shareable EXE
 
-## Quick start
+## Download and run the app
+
+For most users, you do not need Python, VS Code, or an IDE. Download the latest Windows release from GitHub Releases:
+
+- https://github.com/SheldonKCalicott/DjEncore/releases/latest
+
+Then:
+
+1. Download the EXE file
+2. Save it somewhere easy to find, such as Desktop or Downloads
+3. Double-click the EXE to launch it
+4. If Windows shows a security warning, click More info and then Run anyway
+
+## Quick start for developers
 
 ```powershell
 cd S:\VSC\Projects\DjCloneHero
