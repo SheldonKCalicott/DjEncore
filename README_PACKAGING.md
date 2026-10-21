@@ -1,28 +1,38 @@
-# Packaging DJ Clone Hero
+# Packaging and distribution
 
-## Build a Windows executable
+## Build the portable Windows EXE
 
 From the project root, run:
 
 ```powershell
-s:/VSC/Projects/DjCloneHero/.venv/Scripts/python.exe build_exe.py
+.\.venv\Scripts\python.exe build_exe.py
 ```
 
-This creates a single-file executable at:
+This produces a single-file executable in:
 
 - dist/DJCloneHero.exe
 
-## What gets packaged
+## Files included in the build
 
-The build includes:
-- the Tkinter app interface
-- the Playwright-based downloader logic
-- the data folder used for artist storage and history
+The packaged app includes:
+- the Tkinter interface
+- the Playwright browser automation logic
+- the app metadata and artist storage files
+- the default downloads/manifest handling for user data
+
+## Recommended release flow
+
+1. Test the app locally
+2. Run the build script
+3. Verify the exe launches on a clean Windows machine
+4. Share the generated EXE directly, or wrap it in an installer if desired
 
 ## Notes for recipients
 
-After installation, the app should be launched from the generated executable. The first run will create the runtime folders it needs for downloads and history.
+- The app stores runtime data under the user profile and the standard Windows Downloads folder
+- The first launch creates any required folders automatically
+- It is intended as a portable desktop app and does not require an installation step
 
 ## Optional installer
 
-If you want a true installer (.exe) instead of just a portable executable, the next step is to wrap the generated executable in an Inno Setup installer. That is a separate step beyond the standalone build.
+If you want a formal installer experience rather than a portable EXE, you can wrap the built file in Inno Setup or another installer tool.
