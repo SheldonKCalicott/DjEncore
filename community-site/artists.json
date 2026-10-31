@@ -1,0 +1,22 @@
+[
+  { "name": "Ado", "genre": "pop", "tags": ["pop", "idol"] },
+  { "name": "Alternative Metal Crew", "genre": "metal", "tags": ["metal", "alternative"] },
+  { "name": "Arcade Fire", "genre": "indie", "tags": ["indie", "rock"] },
+  { "name": "Daft Punk", "genre": "electronic", "tags": ["electronic", "house"] },
+  { "name": "Deftones", "genre": "metal", "tags": ["metal", "alternative"] },
+  { "name": "The Beatles", "genre": "rock", "tags": ["rock", "classic"] },
+  { "name": "Bring Me The Horizon", "genre": "metal", "tags": ["metal", "rock"] },
+  { "name": "Björk", "genre": "experimental", "tags": ["experimental", "electronic"] },
+  { "name": "Queen", "genre": "rock", "tags": ["rock", "classic"] },
+  { "name": "Rituals", "genre": "goth", "tags": ["goth", "darkwave"] },
+  { "name": "Kraftwerk", "genre": "techno", "tags": ["techno", "electronic"] },
+  { "name": "The Prodigy", "genre": "electronic", "tags": ["electronic", "techno"] },
+  { "name": "Nirvana", "genre": "rock", "tags": ["rock", "grunge"] },
+  { "name": "Massive Attack", "genre": "trip-hop", "tags": ["trip-hop", "electronic"] },
+  { "name": "Skrillex", "genre": "electronic", "tags": ["electronic", "dubstep"] },
+  { "name": "M83", "genre": "ambient", "tags": ["ambient", "electronic"] },
+  { "name": "Tame Impala", "genre": "psychedelic", "tags": ["psych", "rock"] },
+  { "name": "Tool", "genre": "metal", "tags": ["metal", "progressive"] },
+  { "name": "Lorde", "genre": "pop", "tags": ["pop", "indie"] },
+  { "name": "M83", "genre": "ambient", "tags": ["ambient", "electronic"] }
+]

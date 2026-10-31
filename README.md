@@ -42,6 +42,19 @@ This is the safe foundation for a future public-facing community site, which cou
 - genre tags such as goth, metal, rap, techno, or ambient
 - curated artist discovery pages
 
+## Community website on Vercel
+
+A lightweight Vercel-ready community landing page is included in the `community-site` folder. It is designed to host a public artist list and community discovery page without collecting personal data.
+
+Deploy steps:
+
+1. Import the repository into Vercel
+2. Set the project root to `community-site`
+3. Use the default static deployment settings
+4. Publish the site
+
+The site serves a static `artists.json` file, which can later be replaced with a real public API or hosted data source when the community grows.
+
 ## Quick start for developers
 
 ```powershell

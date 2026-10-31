@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="DJ Encore Community — a privacy-safe artist request list and discovery hub built for chart fans and community curation."
+    />
+    <title>DJ Encore Community</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <div class="brand-badge">DJ</div>
+          <div>
+            <p class="eyebrow">Community platform</p>
+            <h1>DJ Encore</h1>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#artist-list">Artist list</a>
+          <a href="#mission">Mission</a>
+          <a href="#roadmap">Roadmap</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow accent">Built for discovery</p>
+            <h2>Make the Enchor library easier to browse, request, and share.</h2>
+            <p class="lede">
+              DJ Encore is growing into a public-friendly community hub for artist requests,
+              discovery, and curated chart browsing. We keep it simple: only artist names,
+              nothing sensitive, nothing personal, and nothing that exposes local folders.
+            </p>
+            <div class="cta-row">
+              <a class="primary-btn" href="https://github.com/SheldonKCalicott/DjEncore/releases/latest" target="_blank" rel="noreferrer">Download app</a>
+              <a class="secondary-btn" href="#artist-list">Explore artist list</a>
+            </div>
+            <ul class="trust-row">
+              <li>Privacy-first</li>
+              <li>Artist-only submissions</li>
+              <li>Vercel-ready</li>
+            </ul>
+          </div>
+
+          <div class="hero-panel">
+            <div class="panel-card">
+              <p class="mini-label">Community snapshot</p>
+              <div class="metric-grid">
+                <div>
+                  <strong id="artist-count">0</strong>
+                  <span>artists</span>
+                </div>
+                <div>
+                  <strong>2026</strong>
+                  <span>launch year</span>
+                </div>
+                <div>
+                  <strong>∞</strong>
+                  <span>community growth</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="artist-list" class="list-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow accent">Public list</p>
+              <h3>Shared artist requests</h3>
+            </div>
+            <div class="search-wrap">
+              <input id="artist-search" type="search" placeholder="Search artist names..." aria-label="Search artist names" />
+            </div>
+          </div>
+
+          <div id="genre-filters" class="genre-filters" aria-label="Filter by genre"></div>
+
+          <div id="artist-grid" class="artist-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="mission" class="info-grid">
+          <article class="info-card">
+            <p class="eyebrow accent">What we collect</p>
+            <h3>Just artist names</h3>
+            <p>
+              The public list is intentionally limited to artist names. No local folders,
+              no personal data, no file paths, and no download history are shared.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow accent">Why it matters</p>
+            <h3>Accessible discovery</h3>
+            <p>
+              It makes the community easier to browse and safer to grow without forcing users
+              to manage a giant spreadsheet or scattered links.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow accent">Next steps</p>
+            <h3>Genre tagging</h3>
+            <p>
+              Later we can expand this with tags like goth, metal, rap, techno, ambient, and other
+              community-driven labels that make discovery faster.
+            </p>
+          </article>
+        </section>
+
+        <section id="roadmap" class="roadmap">
+          <p class="eyebrow accent">Roadmap</p>
+          <h3>What comes next</h3>
+          <div class="timeline">
+            <div class="timeline-item">
+              <span>01</span>
+              <div>
+                <h4>Public artist list</h4>
+                <p>Share the master list on a simple, fast, public endpoint.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <span>02</span>
+              <div>
+                <h4>Community submissions</h4>
+                <p>Add a tiny artist request form and moderation flow.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <span>03</span>
+              <div>
+                <h4>Genre filters</h4>
+                <p>Expand with tags, discovery pages, and curated recommendations.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>DJ Encore Community</p>
+        <a href="https://github.com/SheldonKCalicott/DjEncore" target="_blank" rel="noreferrer">GitHub</a>
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
