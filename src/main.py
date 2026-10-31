@@ -1,7 +1,9 @@
 import json
+import re
 import sys
 import threading
 import tkinter as tk
+import urllib.request
 from pathlib import Path
 from tkinter import ttk, messagebox
 
@@ -17,10 +19,65 @@ def get_workspace_root():
 WORKSPACE_ROOT = get_workspace_root()
 DATA_DIR = WORKSPACE_ROOT / "data"
 ARTISTS_FILE = DATA_DIR / "artists.json"
+MASTERLIST_URL = "https://raw.githubusercontent.com/SheldonKCalicott/DjEncore/main/data/shared_artist_masterlist.json"
+MASTERLIST_CACHE = DATA_DIR / "shared_artist_masterlist.json"
 
 
 def should_show_artist_placeholder(entry_value, has_focus):
     return not entry_value and not has_focus
+
+
+def normalize_masterlist_entries(raw_entries):
+    if raw_entries is None:
+        return []
+
+    cleaned = []
+    seen = set()
+    for value in raw_entries:
+        if value is None:
+            continue
+        if isinstance(value, dict):
+            value = value.get("artist") or value.get("name")
+        if value is None:
+            continue
+
+        name = str(value).strip()
+        if not name:
+            continue
+
+        name = re.sub(r"\s+", " ", name)
+        key = name.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(name)
+
+    return cleaned
+
+
+def fetch_shared_artist_masterlist(url=MASTERLIST_URL, save_path=MASTERLIST_CACHE):
+    try:
+        with urllib.request.urlopen(url, timeout=30) as response:
+            payload = response.read().decode("utf-8")
+        data = json.loads(payload)
+        if isinstance(data, dict):
+            entries = data.get("artists") or data.get("artist_names") or data.get("items") or []
+        else:
+            entries = data
+        cleaned = normalize_masterlist_entries(entries)
+
+        if save_path is not None:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            save_path.write_text(json.dumps(cleaned, ensure_ascii=False, indent=2), encoding="utf-8")
+        return cleaned
+    except Exception:
+        if save_path is not None and save_path.exists():
+            try:
+                raw = json.loads(save_path.read_text(encoding="utf-8"))
+                return normalize_masterlist_entries(raw)
+            except Exception:
+                pass
+        raise
 
 
 class App:
@@ -67,7 +124,7 @@ class App:
         header.pack(fill="x", pady=(0, 12))
         title = ttk.Label(header, text="DJ Extractor", style="Large.TLabel")
         title.pack(anchor="w")
-        subtitle = ttk.Label(header, text="Add artists and select desired difficulty (uncheck all to ignore difficulty filter).", style="Subtitle.TLabel")
+        subtitle = ttk.Label(header, text="Add artists and any desired difficulty filters.", style="Subtitle.TLabel")
         subtitle.pack(anchor="w", pady=(4, 0))
 
         lib_card = ttk.Frame(main, padding=10, style="Card.TFrame")
@@ -127,7 +184,7 @@ class App:
 
         self.d_vars = {}
         for d in ["Easy", "Medium", "Hard", "Expert"]:
-            var = tk.IntVar(value=1)
+            var = tk.IntVar(value=0)
             cb = ttk.Checkbutton(diff_panel, text=d, variable=var, style="TCheckbutton")
             cb.pack(anchor="center", pady=2)
             self.d_vars[d.lower()] = var
@@ -136,7 +193,7 @@ class App:
         toggle_frame.pack(fill="x", pady=(6, 0))
         self.toggle_difficulties_btn = tk.Button(
             toggle_frame,
-            text="Uncheck All",
+            text="Check All",
             command=self.toggle_difficulties,
             bg="#1b2031",
             fg=fg,
@@ -184,6 +241,9 @@ class App:
         self.search_btn = ttk.Button(action_row, text="Download Charts", command=self.start_search, style="Accent.TButton")
         self.search_btn.configure(width=18)
         self.search_btn.pack(side="left", fill="x", expand=True, padx=8)
+        self.download_masterlist_btn = ttk.Button(action_row, text="Master List", command=self.download_shared_artist_masterlist, style="TButton")
+        self.download_masterlist_btn.configure(width=12)
+        self.download_masterlist_btn.pack(side="left", fill="x", expand=True, padx=8)
         self.open_downloads_btn = ttk.Button(action_row, text="Open Folder", command=self.open_downloads_folder, style="TButton")
         self.open_downloads_btn.configure(width=8)
         self.open_downloads_btn.pack(side="left", fill="x", expand=True, padx=(8, 0))
@@ -355,6 +415,19 @@ class App:
             self.toggle_difficulties_btn.configure(text="Uncheck All")
         for var in self.d_vars.values():
             var.set(new_state)
+
+    def download_shared_artist_masterlist(self):
+        try:
+            artists = fetch_shared_artist_masterlist()
+            target = get_downloads_root() / "shared_artist_masterlist.json"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(json.dumps(artists, ensure_ascii=False, indent=2), encoding="utf-8")
+            messagebox.showinfo(
+                "Shared Artist List",
+                f"Downloaded {len(artists)} artist names to:\n{target}",
+            )
+        except Exception as exc:
+            messagebox.showerror("Shared Artist List", f"Could not download the shared artist list: {exc}")
 
     def open_downloads_folder(self):
         try:
@@ -531,7 +604,7 @@ class App:
         self.show_downloaded_files()
 
     def set_ui_state(self, state):
-        for w in [self.search_btn, self.view_history_btn, self.open_downloads_btn, self.toggle_difficulties_btn]:
+        for w in [self.search_btn, self.view_history_btn, self.download_masterlist_btn, self.open_downloads_btn, self.toggle_difficulties_btn]:
             try:
                 w.config(state=state)
             except Exception:

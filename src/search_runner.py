@@ -74,6 +74,45 @@ def normalize_artist_folder(name):
     return name[:120] or "Unknown Artist"
 
 
+def is_zip_option_text(value):
+    if value is None:
+        return False
+    text = re.sub(r"\s+", " ", str(value)).strip().lower()
+    if not text:
+        return False
+    if ".zip" in text or "zip archive" in text or "archive" in text:
+        return True
+    if re.search(r"\bzip\b", text):
+        return True
+    return False
+
+
+def looks_like_download_format_popup(text_or_html):
+    if text_or_html is None:
+        return False
+    text = re.sub(r"\s+", " ", str(text_or_html)).strip().lower()
+    if not text:
+        return False
+    zip_indicators = [".zip", "zip archive", "zip", "archive"]
+    popup_indicators = [
+        "download format",
+        "download type",
+        "select download format",
+        "select file format",
+        "selecteddownloadformat",
+        "file format",
+        "choose download",
+        "choose format",
+        "format selection",
+        "download as",
+    ]
+    if any(keyword in text for keyword in popup_indicators) and any(keyword in text for keyword in zip_indicators):
+        return True
+    if "selecteddownloadformat" in text and ("zip" in text or "archive" in text):
+        return True
+    return False
+
+
 def fingerprint_path(path):
     path = Path(path)
     if not path.exists():
@@ -102,8 +141,16 @@ def title_matches_artist(raw_title, artist):
         raw_value = (value or "").strip()
         if not raw_value:
             return []
-        parts = re.split(r"\s*(?:&|and|/|,|\+|x|feat\.?|ft\.?|with)\s*", raw_value, flags=re.IGNORECASE)
-        return [normalize_title_text(part) for part in parts if normalize_title_text(part)]
+        tokens = re.split(r"\s*(?:&|and|/|,|\+|x|feat\.?|ft\.?|with|\s+)\s*", raw_value, flags=re.IGNORECASE)
+        parts = []
+        for token in tokens:
+            normalized = normalize_title_text(token)
+            if not normalized:
+                continue
+            if normalized in {"the", "a", "an"}:
+                continue
+            parts.append(normalized)
+        return parts
 
     normalized_artist = normalize_title_text(artist)
     normalized_chart_artist = normalize_title_text(chart_artist)
@@ -114,22 +161,19 @@ def title_matches_artist(raw_title, artist):
     if normalized_chart_artist == normalized_artist:
         return True
 
-    exact_token_match = bool(re.search(rf"(?<![a-z0-9]){re.escape(normalized_artist)}(?![a-z0-9])", normalized_chart_artist))
-    if exact_token_match and normalized_chart_artist != normalized_artist:
-        chart_parts = split_artist_parts(chart_artist)
-        if normalized_artist in chart_parts:
-            return True
-        return False
-    if exact_token_match:
-        return True
-
     artist_parts = split_artist_parts(artist)
     chart_parts = split_artist_parts(chart_artist)
 
     if not artist_parts or not chart_parts:
         return False
 
-    return any(part == normalized_artist for part in chart_parts) or any(part == normalized_chart_artist for part in artist_parts)
+    artist_set = set(artist_parts)
+    chart_set = set(chart_parts)
+
+    if artist_set == chart_set:
+        return True
+
+    return artist_set.issubset(chart_set) or chart_set.issubset(artist_set)
 
 
 def get_downloads_root():
@@ -320,12 +364,6 @@ def run_search(artists, difficulties, on_progress=None, close_browser=False, sel
         if updated_manifest != current_manifest:
             download_manifest = updated_manifest
             save_download_manifest()
-
-    def is_downloaded_before(artist, title):
-        normalized_artist = (artist or "").strip().lower()
-        normalized_title = (title or "").strip().lower()
-        current_manifest = load_download_manifest(manifest_path)
-        return any((entry.get("artist") or "").strip().lower() == normalized_artist and (entry.get("title") or "").strip().lower() == normalized_title for entry in current_manifest)
 
     def load_more_results(times=100, pause_ms=1200):
         previous_count = None
@@ -776,10 +814,6 @@ def run_search(artists, difficulties, on_progress=None, close_browser=False, sel
                         report(f"Skipping result {r_idx} '{display_title}' — difficulty text did not satisfy selected {selected_difficulties}", "debug")
                         continue
 
-                    if is_downloaded_before(artist, display_title):
-                        report(format_download_skip_message(artist, display_title), "info")
-                        continue
-
                     # find download button inside this result
                     download_btn = result.query_selector("button.btn.btn-primary")
                     if not download_btn:
@@ -885,13 +919,17 @@ def run_search(artists, difficulties, on_progress=None, close_browser=False, sel
                     try:
                         start = time.time()
                         while time.time() - start < 10:
-                            candidates = page.query_selector_all("dialog, .modal-box, .modal")
+                            candidates = page.query_selector_all(
+                                "dialog, [role='dialog'], .modal-box, .modal, [data-testid*='modal'], [class*='modal'], [id*='modal']"
+                            )
                             for c in candidates:
                                 try:
-                                    html = c.inner_html().lower()
+                                    text = c.inner_text() or ""
+                                    html = c.inner_html() or ""
                                 except Exception:
+                                    text = ""
                                     html = ""
-                                if "selecteddownloadformat" in html or ".zip" in html:
+                                if looks_like_download_format_popup(text) or looks_like_download_format_popup(html):
                                     modal = c
                                     break
                             if modal:
@@ -966,31 +1004,64 @@ def run_search(artists, difficulties, on_progress=None, close_browser=False, sel
                           const normalize = (value) => (value || '').toLowerCase();
                           const activate = (el) => {
                             if (!el) return false;
+                            const name = (el.getAttribute && (el.getAttribute('name') || '')) || '';
+                            const value = (el.getAttribute && (el.getAttribute('value') || '')) || '';
+                            const text = [el.innerText, el.textContent, el.getAttribute('aria-label'), el.getAttribute('title'), value, name]
+                              .filter(Boolean)
+                              .join(' ');
+
                             if (el.matches && el.matches('input[type=radio], [role="radio"]')) {
-                              el.checked = true;
-                              el.dispatchEvent(new Event('input', {bubbles:true}));
-                              el.dispatchEvent(new Event('change', {bubbles:true}));
+                              const isZipOption = /(?:^|[^a-z])(?:\\.?zip|archive)(?:$|[^a-z])/i.test(text) || /selecteddownloadformat/i.test(name) && /zip|archive/i.test(value);
+                              if (isZipOption) {
+                                el.checked = true;
+                                el.dispatchEvent(new Event('input', {bubbles:true}));
+                                el.dispatchEvent(new Event('change', {bubbles:true}));
+                              }
                             }
-                            const label = el.closest('label') || el.parentElement;
-                            if (label && label.matches && label.matches('label')) {
-                              label.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));
-                            } else {
-                              el.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));
+
+                            const label = el.closest && el.closest('label');
+                            if (label) {
+                              const labelText = (label.innerText || label.textContent || '').toLowerCase();
+                              if (labelText.includes('zip') || labelText.includes('archive')) {
+                                label.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));
+                                return true;
+                              }
                             }
-                            return true;
+
+                            if (el.matches && (el.matches('button, a, span, div') || el.matches('[role="button"]'))) {
+                              const elText = normalize(text);
+                              if (elText.includes('.zip') || elText.includes('zip') || elText.includes('archive')) {
+                                el.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));
+                                return true;
+                              }
+                            }
+
+                            if (el.matches && el.matches('input')) {
+                              const inputText = normalize(value + ' ' + name);
+                              if (inputText.includes('zip') || inputText.includes('archive')) {
+                                el.checked = true;
+                                el.dispatchEvent(new Event('input', {bubbles:true}));
+                                el.dispatchEvent(new Event('change', {bubbles:true}));
+                                return true;
+                              }
+                            }
+                            return false;
                           };
 
                           const directSelectors = [
-                            'a:has-text(".zip")',
-                            'a:has-text("zip")',
+                            'input[name*="downloadformat" i]',
+                            'input[name*="downloadFormat" i]',
+                            'input[value*="zip" i]',
+                            'input[value*="archive" i]',
                             'label:has-text(".zip")',
                             'label:has-text("zip")',
                             'button:has-text(".zip")',
                             'button:has-text("zip")',
-                            'input[value*="zip"]',
-                            'input[name*="zip"]',
+                            'a:has-text(".zip")',
+                            'a:has-text("zip")',
                             '[data-download-format*="zip"]',
                             '[data-format*="zip"]',
+                            '[aria-label*="zip" i]',
                           ];
 
                           for (const selector of directSelectors) {
@@ -1000,9 +1071,9 @@ def run_search(artists, difficulties, on_progress=None, close_browser=False, sel
                             }
                           }
 
-                          const candidates = Array.from(root.querySelectorAll('input[type=radio], [role="radio"], label, a, button, .option, .choice'));
+                          const candidates = Array.from(root.querySelectorAll('input[type=radio], [role="radio"], label, a, button, span, div, .option, .choice'));
                           for (const el of candidates) {
-                            const text = [el.innerText, el.textContent, el.getAttribute('aria-label'), el.getAttribute('title'), el.getAttribute('data-value'), el.getAttribute('value')]
+                            const text = [el.innerText, el.textContent, el.getAttribute('aria-label'), el.getAttribute('title'), el.getAttribute('data-value'), el.getAttribute('value'), el.getAttribute('name')]
                               .filter(Boolean)
                               .join(' ');
                             if (normalize(text).includes('.zip') || normalize(text).includes('zip') || normalize(text).includes('archive')) {
@@ -1020,8 +1091,10 @@ def run_search(artists, difficulties, on_progress=None, close_browser=False, sel
                     except Exception:
                         chosen = False
 
-                    # click popup Download button
-                    confirm_btn = modal.query_selector("button.btn.btn-primary")
+                    confirm_btn = (
+                        modal.query_selector("button:has-text('Download'), button:has-text('Confirm'), button.btn.btn-primary, button.primary")
+                        or modal.query_selector("button")
+                    )
                     if not confirm_btn:
                         report(f"Result {r_idx}: popup Download button not found", "warning")
                         continue

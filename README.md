@@ -32,6 +32,16 @@ Then:
 3. Double-click the EXE to launch it
 4. If Windows shows a security warning, click More info and then Run anyway
 
+## Shared artist request list
+
+The app can download a public master list of artist names from a shared JSON endpoint. The first version is intentionally limited to artist names only and does not collect folders, file paths, browsing history, or any other sensitive metadata.
+
+This is the safe foundation for a future public-facing community site, which could later allow submissions for things like:
+
+- artist request list
+- genre tags such as goth, metal, rap, techno, or ambient
+- curated artist discovery pages
+
 ## Quick start for developers
 
 ```powershell

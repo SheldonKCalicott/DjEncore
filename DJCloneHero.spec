@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['S:\\VSC\\Projects\\DjCloneHero\\src\\app.ico'],
 )

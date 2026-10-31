@@ -14,11 +14,13 @@ from search_runner import (
     format_download_skip_message,
     get_downloads_root,
     is_cover_title,
+    is_zip_option_text,
+    looks_like_download_format_popup,
     should_stop_scrolling,
     title_matches_artist,
 )
 
-from main import should_show_artist_placeholder
+from main import normalize_masterlist_entries, should_show_artist_placeholder
 
 
 def test_extract_chart_artist_uses_prefix_before_separator():
@@ -66,7 +68,11 @@ def test_title_matches_artist_requires_exact_artist_match():
     assert title_matches_artist("Ado & Camellia - New World", "Ado") is True
     assert title_matches_artist("Ado / Camellia - New World", "Ado") is True
     assert title_matches_artist("Adonis - New World", "Ado") is False
-    assert title_matches_artist("The Ado - New World", "Ado") is False
+    assert title_matches_artist("The Ado - New World", "Ado") is True
+    assert title_matches_artist("Beatlemania - New World", "Beatles") is False
+    assert title_matches_artist("The Beatles - Hey Jude", "Beatles") is True
+    assert title_matches_artist("Beatles - Hey Jude", "The Beatles") is True
+    assert title_matches_artist("Adore - New World", "Ado") is False
 
 
 def test_should_stop_scrolling_only_after_stable_result_count():
@@ -77,6 +83,28 @@ def test_should_stop_scrolling_only_after_stable_result_count():
     assert should_stop_scrolling(current_count=10, previous_count=10, stable_rounds=8, loading=True, bottom_reached=True) is False
     assert should_stop_scrolling(current_count=10, previous_count=10, stable_rounds=8, bottom_reached=False) is False
     assert should_stop_scrolling(current_count=10, previous_count=10, stable_rounds=8, bottom_reached=True, height_delta=10) is False
+
+
+def test_download_format_popup_helpers_detect_zip_modal_text():
+    modal_html = '''
+    <div class="modal">
+      <h3>Select Download Format</h3>
+      <label><input type="radio" name="selectedDownloadFormat" value="mp3"> .mp3 </label>
+      <label><input type="radio" name="selectedDownloadFormat" value="zip"> .zip </label>
+      <button>Download</button>
+    </div>
+    '''
+
+    assert looks_like_download_format_popup(modal_html) is True
+    assert is_zip_option_text(".zip") is True
+    assert is_zip_option_text("ZIP archive") is True
+    assert is_zip_option_text("MP3") is False
+
+
+def test_normalize_masterlist_entries_filters_and_deduplicates():
+    raw = [" Ado ", "Ado", "", "   ", "Camellia", None, "Camellia", "  The Beatles "]
+
+    assert normalize_masterlist_entries(raw) == ["Ado", "Camellia", "The Beatles"]
 
 
 def test_append_download_entry_persists_full_history_and_dedupes(tmp_path):
